@@ -1,32 +1,29 @@
-import {from, fromEvent as observableFromEvent, Observable, Subscription} from 'rxjs';
-
-import {takeUntil, finalize, map, mergeMap, timeout, skipWhile, filter, scan, first} from 'rxjs/operators';
-import {Component, AfterViewInit, ViewChild, ElementRef, ChangeDetectorRef, HostListener, Renderer2} from '@angular/core';
-import {MatDialogRef} from '@angular/material';
-import {Feedback} from '../entity/feedback';
-import {FeedbackService} from '../feedback.service';
-
-import {Rectangle} from '../entity/rectangle';
-import {element} from 'protractor';
+import { Component, AfterViewInit, ViewChild, ElementRef, ChangeDetectorRef, HostListener } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
+import { fromEvent as observableFromEvent, Observable, Subscription } from 'rxjs';
+import { takeUntil, finalize, map, mergeMap } from 'rxjs/operators';
+import { Feedback } from '../entity/feedback';
+import { Rectangle } from '../entity/rectangle';
+import { FeedbackService } from '../feedback.service';
 
 @Component({
+  standalone: false,
   selector: 'feedback-dialog',
   templateUrl: './feedback-dialog.component.html',
   styleUrls: ['./feedback-dialog.component.css']
 })
-
 export class FeedbackDialogComponent implements AfterViewInit {
   public showToolbar = false;
   public vars: object = {};
   public feedback = new Feedback();
   public includeScreenshot: boolean = true;
   public showSpinner = true;
-  public screenshotEle: HTMLElement;
-  public drawCanvas: HTMLCanvasElement;
+  public screenshotEle!: HTMLElement;
+  public drawCanvas?: HTMLCanvasElement;
   public showToolbarTips: boolean = true;
   @ViewChild('screenshotParent')
-  public screenshotParent: ElementRef;
-  public drawColor: string = this.feedbackService.highlightedColor;
+  public screenshotParent?: ElementRef;
+  public drawColor: string;
   public rectangles: Rectangle[] = [];
   private scrollWidth = document.documentElement.scrollWidth;
   private scrollHeight = document.documentElement.scrollHeight;
@@ -34,14 +31,15 @@ export class FeedbackDialogComponent implements AfterViewInit {
     'h5', 'h6', 'p', 'strong', 'small', 'sub', 'sup', 'b', 'time', 'img',
     'video', 'input', 'label', 'select', 'textarea', 'article', 'summary', 'section'];
   // the flag field 'isManuallyDrawRect' to solve conflict between manually draw and auto draw
-  private manuallyDrawRect$: Subscription;
-  private autoDrawRect$: Subscription;
+  private manuallyDrawRect$?: Subscription;
+  private autoDrawRect$?: Subscription;
   public isDrawingRect: boolean = false;
 
   constructor(public dialogRef: MatDialogRef<FeedbackDialogComponent>,
               private feedbackService: FeedbackService,
               private detector: ChangeDetectorRef,
               private el: ElementRef) {
+    this.drawColor = this.feedbackService.highlightedColor;
     this.feedback = new Feedback();
     this.feedback.description = '';
     this.vars = this.feedbackService.initialVariables;
@@ -122,7 +120,9 @@ export class FeedbackDialogComponent implements AfterViewInit {
   }
 
   private appendScreenshot() {
-    if (this.screenshotParent) { this.screenshotParent.nativeElement.appendChild(this.screenshotEle); }
+    if (this.screenshotParent) {
+      this.screenshotParent.nativeElement.appendChild(this.screenshotEle);
+    }
   }
 
   private initBackgroundCanvas() {
@@ -136,9 +136,12 @@ export class FeedbackDialogComponent implements AfterViewInit {
   }
 
   private drawContainerRect() {
-    const drawContext = this.drawCanvas.getContext('2d'),
+    const drawContext = this.drawCanvas?.getContext('2d'),
       width = this.scrollWidth,
       height = this.scrollHeight;
+    if (!drawContext) {
+      return;
+    }
     drawContext.beginPath();
     drawContext.fillStyle = 'rgba(0,0,0,0.3)';
     drawContext.clearRect(0, 0, width, height);
@@ -146,7 +149,10 @@ export class FeedbackDialogComponent implements AfterViewInit {
   }
 
   private drawRectangle(rect: Rectangle) {
-    const context = this.drawCanvas.getContext('2d');
+    const context = this.drawCanvas?.getContext('2d');
+    if (!context) {
+      return;
+    }
     context.lineJoin = 'round';
     context.beginPath();
     if (rect.color === this.feedbackService.hiddenColor) {
@@ -169,10 +175,10 @@ export class FeedbackDialogComponent implements AfterViewInit {
   }
 
   private addCanvasListeners(): void {
-    const mouseUp = observableFromEvent(document.documentElement, 'mouseup'),
-          mouseMove = observableFromEvent(document.documentElement, 'mousemove'),
-          mouseDown = observableFromEvent(document.documentElement, 'mousedown'),
-          scroll = observableFromEvent(window, 'scroll');
+    const mouseUp = observableFromEvent(document.documentElement, 'mouseup') as Observable<MouseEvent>,
+      mouseMove = observableFromEvent(document.documentElement, 'mousemove') as Observable<MouseEvent>,
+      mouseDown = observableFromEvent(document.documentElement, 'mousedown') as Observable<MouseEvent>,
+      scroll = observableFromEvent(window, 'scroll');
 
     this.manuallyDrawRect(mouseDown, mouseMove, mouseUp);
     this.autoDrawRect(mouseMove);
@@ -183,7 +189,7 @@ export class FeedbackDialogComponent implements AfterViewInit {
     scroll.subscribe(
       event => {
         const currentWindowScrollX = window.scrollX,
-              currentWindowScrollY = window.scrollY;
+          currentWindowScrollY = window.scrollY;
         this.rectangles.forEach(rect => {
           rect.startY = rect.startY - (currentWindowScrollY - rect.windowScrollY);
           rect.startX = rect.startX - (currentWindowScrollX - rect.windowScrollX);
@@ -197,14 +203,20 @@ export class FeedbackDialogComponent implements AfterViewInit {
   }
 
   private destroyCanvasListeners(): void {
-    if (this.manuallyDrawRect$) { this.manuallyDrawRect$.unsubscribe(); }
-    if (this.autoDrawRect$) { this.autoDrawRect$.unsubscribe(); }
+    if (this.manuallyDrawRect$) {
+      this.manuallyDrawRect$.unsubscribe();
+    }
+    if (this.autoDrawRect$) {
+      this.autoDrawRect$.unsubscribe();
+    }
   }
 
-  private manuallyDrawRect(mouseDown: Observable<Event>, mouseMove: Observable<Event>, mouseUp: Observable<Event>): void {
+  private manuallyDrawRect(mouseDown: Observable<MouseEvent>, mouseMove: Observable<MouseEvent>, mouseUp: Observable<MouseEvent>): void {
     const mouseDrag = mouseDown.pipe(mergeMap((mouseDownEvent: MouseEvent) => {
-      if (this.showToolbarTips) { this.showToolbarTips = false; }
-      this.autoDrawRect$.unsubscribe();
+      if (this.showToolbarTips) {
+        this.showToolbarTips = false;
+      }
+      this.autoDrawRect$?.unsubscribe();
       this.isDrawingRect = true;
 
       const newRectangle = new Rectangle();
@@ -223,9 +235,11 @@ export class FeedbackDialogComponent implements AfterViewInit {
           if (newRectangle.width === undefined || newRectangle.height === undefined ||
             newRectangle.width === 0 || newRectangle.height === 0) {
             const rect = this.drawTempCanvasRectangle(mouseDownEvent);
-            if (rect) { this.rectangles.push(rect); }
+            if (rect) {
+              this.rectangles.push(rect);
+            }
           } else {
-          // drag to draw rectangle
+            // drag to draw rectangle
             if (newRectangle.height < 0) {
               newRectangle.startY = newRectangle.startY + newRectangle.height;
               newRectangle.height = Math.abs(newRectangle.height);
@@ -251,7 +265,7 @@ export class FeedbackDialogComponent implements AfterViewInit {
     );
   }
 
-  private autoDrawRect(mouseMove: Observable<Event>): void {
+  private autoDrawRect(mouseMove: Observable<MouseEvent>): void {
     this.autoDrawRect$ = mouseMove.subscribe({
       next: (mouseMoveEvent: MouseEvent) => {
         this.drawPersistCanvasRectangles();
@@ -269,11 +283,14 @@ export class FeedbackDialogComponent implements AfterViewInit {
   }
 
   private drawTempCanvasRectangle(event: MouseEvent) {
-    let rectangle: Rectangle = null;
+    let rectangle: Rectangle | null = null;
     const clientX = event.clientX,
-          clientY = event.clientY,
-          els = document.elementsFromPoint(clientX, clientY),
-          el = els[2];
+      clientY = event.clientY,
+      els = document.elementsFromPoint(clientX, clientY),
+      el = els[2];
+    if (!this.drawCanvas) {
+      return;
+    }
     if ((!this.isExcludeRect(els)) && el && this.elCouldBeHighlighted.indexOf(el.nodeName.toLowerCase()) > -1) {
       rectangle = new Rectangle();
       const rect = el.getBoundingClientRect();
@@ -299,7 +316,7 @@ export class FeedbackDialogComponent implements AfterViewInit {
   }
 
   private isExcludeRect(elements: Element[]): boolean {
-    const result = elements.some( el => {
+    const result = elements.some(el => {
       return el.getAttribute('exclude-rect') === 'true';
     });
     return result;

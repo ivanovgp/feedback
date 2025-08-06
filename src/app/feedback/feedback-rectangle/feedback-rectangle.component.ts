@@ -3,16 +3,16 @@ import {Rectangle} from '../entity/rectangle';
 import {FeedbackService} from '../feedback.service';
 
 @Component({
-  selector: 'feedback-rectangle',
+  standalone: false,
+  selector: 'feedback-rectangle[rectangle][noHover]',
   templateUrl: './feedback-rectangle.component.html',
   styleUrls: ['./feedback-rectangle.component.css']
 })
-
 export class FeedbackRectangleComponent {
   @Input()
-  public rectangle: Rectangle;
+  public rectangle!: Rectangle;
   @Input()
-  public noHover: boolean;
+  public noHover!: boolean;
   @Output()
   public close = new EventEmitter<boolean>();
   public showCloseTag: boolean = false;
@@ -33,6 +33,4 @@ export class FeedbackRectangleComponent {
   public onClose(): void {
     this.close.emit();
   }
-
-
 }

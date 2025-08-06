@@ -1,27 +1,25 @@
-import {fromEvent as observableFromEvent} from 'rxjs';
-
-import {takeUntil, finalize, map, mergeMap} from 'rxjs/operators';
-import {Component, ElementRef, Input, Output, EventEmitter, AfterViewInit, ViewChild, OnChanges} from '@angular/core';
-import {FeedbackService} from '../feedback.service';
-
+import { Component, ElementRef, Input, Output, EventEmitter, AfterViewInit, ViewChild, OnChanges } from '@angular/core';
+import { fromEvent as observableFromEvent, Observable } from 'rxjs';
+import { takeUntil, finalize, map, mergeMap } from 'rxjs/operators';
+import { FeedbackService } from '../feedback.service';
 
 @Component({
-  selector: 'feedback-toolbar',
+  standalone: false,
+  selector: 'feedback-toolbar[drawColor]',
   templateUrl: './feedback-toolbar.component.html',
   styleUrls: ['./feedback-toolbar.component.css']
 })
-
 export class FeedbackToolbarComponent implements AfterViewInit, OnChanges {
   @Input()
-  public drawColor: string;
+  public drawColor!: string;
   @Output()
   public manipulate = new EventEmitter<string>();
   public disableToolbarTips = false;
   @ViewChild('toggleMove')
-  private toggleMoveBtn: ElementRef;
+  private toggleMoveBtn!: ElementRef<HTMLDivElement>;
   public isSwitch = false;
   public isDragging = false;
-  public vars: object = {};
+  public vars: any = {};
 
   constructor(public el: ElementRef, private feedbackService: FeedbackService) {
     this.vars = feedbackService.initialVariables;
@@ -54,9 +52,9 @@ export class FeedbackToolbarComponent implements AfterViewInit, OnChanges {
   }
 
   public addDragListenerOnMoveBtn() {
-    const mouseUp = observableFromEvent(this.toggleMoveBtn.nativeElement, 'mouseup');
-    const mouseMove = observableFromEvent(document.documentElement, 'mousemove');
-    const mouseDown = observableFromEvent(this.toggleMoveBtn.nativeElement, 'mousedown');
+    const mouseUp = observableFromEvent(this.toggleMoveBtn.nativeElement, 'mouseup') as Observable<MouseEvent>;
+    const mouseMove = observableFromEvent(document.documentElement, 'mousemove') as Observable<MouseEvent>;
+    const mouseDown = observableFromEvent(this.toggleMoveBtn.nativeElement, 'mousedown') as Observable<MouseEvent>;
     const mouseDrag = mouseDown.pipe(mergeMap((md: MouseEvent) => {
       this.feedbackService.setIsDraggingToolbar(true);
       const startX = md.offsetX;

@@ -6,7 +6,7 @@
 
 ### Prerequisites
 make sure your project:
-* is an angular(version >= 6.0.0) project
+* is an angular(version >= 19.0.0) project
 * has set up [angular material](https://github.com/angular/material2/blob/master/guides/getting-started.md)
 
 #### How to use it in your project

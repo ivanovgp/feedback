@@ -1,10 +1,13 @@
-import {Directive, HostListener, EventEmitter, Output, Input, OnInit} from '@angular/core';
-import {MatDialog} from '@angular/material';
-import {FeedbackDialogComponent} from './feedback-dialog/feedback-dialog.component';
-import {FeedbackService} from './feedback.service';
-import {Overlay} from '@angular/cdk/overlay';
+import { Overlay } from '@angular/cdk/overlay';
+import { Directive, HostListener, EventEmitter, Output, Input, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { FeedbackDialogComponent } from './feedback-dialog/feedback-dialog.component';
+import { FeedbackService } from './feedback.service';
 
-@Directive({selector: '[feedback]'})
+@Directive({
+  standalone: false,
+  selector: '[feedback]'
+})
 export class FeedbackDirective implements OnInit {
   private overlay: Overlay;
   @Input() title: string = 'Send feedback';

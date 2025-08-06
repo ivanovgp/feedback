@@ -1,4 +1,4 @@
 export class Feedback {
-  public description: string;
-  public screenshot: string;
+  public description: string = '';
+  public screenshot?: string | null;
 }

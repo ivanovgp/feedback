@@ -1,7 +1,7 @@
-import {Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 import html2canvas from 'html2canvas';
-import {Subject, Observable} from 'rxjs';
-import {Feedback} from './entity/feedback'; // import Observable to solve build issue
+import { Subject, Observable } from 'rxjs';
+import { Feedback } from './entity/feedback'; // import Observable to solve build issue
 
 @Injectable()
 export class FeedbackService {
@@ -27,7 +27,7 @@ export class FeedbackService {
       height: document.documentElement.clientHeight,
       x: document.documentElement.scrollLeft,
       y: document.documentElement.scrollTop,
-      allowTaint : true
+      allowTaint: true
     }).then(bodyCanvas => {
       this.screenshotCanvasSource.next(bodyCanvas);
     });
@@ -45,9 +45,9 @@ export class FeedbackService {
     this.isDraggingToolbarSource.next(isDragging);
   }
 
-  public getImgEle(canvas): HTMLElement {
+  public getImgEle(canvas: HTMLCanvasElement): HTMLElement {
     const img = canvas.toDataURL('image/png'),
-          imageEle = document.createElement('img');
+      imageEle = document.createElement('img');
     imageEle.setAttribute('src', img);
     Object.assign(imageEle.style, {
       position: 'absolute',
